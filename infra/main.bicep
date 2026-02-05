@@ -60,6 +60,7 @@ module web './core/host/appservice.bicep' = {
     appServicePlanId: appServicePlan.outputs.id
     runtimeName: 'python'
     runtimeVersion: '3.13'
+    appCommandLine: 'python -m streamlit run app.py --server.port 8000 --server.address 0.0.0.0 --server.headless true'
     scmDoBuildDuringDeployment: true
     tags: union(tags, { 'azd-service-name': 'web' })
   }

@@ -1,32 +1,26 @@
-import os
+import streamlit as st
 
-from flask import (Flask, redirect, render_template, request,
-                   send_from_directory, url_for)
+st.set_page_config(
+    page_title="Streamlit on Azure App Service",
+    layout="centered",
+)
 
-app = Flask(__name__)
+st.title("Streamlit demo app")
+st.write(
+    "This is a simple greeting app to validate that Streamlit can run on Azure App Service. Greetings Rens"
+)
 
+with st.form("hello_form"):
+    name = st.text_input("Your name", placeholder="Ada Lovelace")
+    submitted = st.form_submit_button("Say hello")
 
-@app.route('/')
-def index():
-   print('Request for index page received')
-   return render_template('index.html')
+if submitted:
+    cleaned = name.strip()
+    if cleaned:
+        st.success(f"Hello, {cleaned}!")
+    else:
+        st.warning("Please enter a name.")
 
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-@app.route('/hello', methods=['POST'])
-def hello():
-   name = request.form.get('name')
-
-   if name:
-       print('Request for hello page received with name=%s' % name)
-       return render_template('hello.html', name = name)
-   else:
-       print('Request for hello page received with no name or blank name -- redirecting')
-       return redirect(url_for('index'))
-
-
-if __name__ == '__main__':
-   app.run()
+st.caption(
+    "For Azure App Service, the startup command runs Streamlit on port 8000."
+)

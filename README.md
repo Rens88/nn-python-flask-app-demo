@@ -1,9 +1,17 @@
-# Deploy a Python (Flask) web app to Azure App Service - Sample Application
+# Deploy a Python (Streamlit) web app to Azure App Service - Sample Application
 
-This is the sample Flask application for the Azure Quickstart [Deploy a Python (Django or Flask) web app to Azure App Service](https://docs.microsoft.com/en-us/azure/app-service/quickstart-python). For instructions on how to create the Azure resources and deploy the application to Azure, refer to the Quickstart article.
+This is a sample Streamlit application configured for Azure App Service using `azd`. The app code lives in `app.py` and renders a simple greeting UI so you can validate Streamlit deployment behavior in your Azure environment.
 
-Sample applications are available for the other frameworks here:
+**Local run**
+1. `python -m venv .venv`
+2. `source .venv/bin/activate` (or `.\.venv\Scripts\activate` on Windows)
+3. `pip install -r requirements.txt`
+4. `streamlit run app.py`
 
+**Azure App Service**
+The Azure provisioning files in `infra/` set a startup command that runs Streamlit on port `8000`, which matches App Service expectations. After provisioning with `azd up`, the app should be reachable at the default App Service URL.
+
+Sample applications are available for other frameworks here:
 * Django [https://github.com/Azure-Samples/msdocs-python-django-webapp-quickstart](https://github.com/Azure-Samples/msdocs-python-django-webapp-quickstart)
 * FastAPI [https://github.com/Azure-Samples/msdocs-python-fastapi-webapp-quickstart](https://github.com/Azure-Samples/msdocs-python-fastapi-webapp-quickstart)
 
