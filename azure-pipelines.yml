@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - '*'
+
+variables:
+  # Set these in Azure DevOps pipeline variables or variable groups:
+  # azureSubscription, acrName, imageRepository, webAppNameDev, webAppNameProd
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  imageTag: '$(Build.BuildId)'
+  vmImageName: 'ubuntu-latest'
+
+stages:
+  - stage: Build
+    displayName: Build
+    jobs:
+      - job: BuildAndPush
+        displayName: Build and Push Container
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: Build and push image to ACR
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+
+                az acr login --name "$(acrName)"
+
+                docker build -f "$(dockerfilePath)" -t "$(acrName).azurecr.io/$(imageRepository):$(imageTag)" .
+                docker push "$(acrName).azurecr.io/$(imageRepository):$(imageTag)"
+
+                if [ "$(Build.SourceBranch)" = "refs/heads/main" ]; then
+                  docker tag "$(acrName).azurecr.io/$(imageRepository):$(imageTag)" "$(acrName).azurecr.io/$(imageRepository):latest"
+                  docker push "$(acrName).azurecr.io/$(imageRepository):latest"
+                fi
+
+  - stage: Deploy_Dev
+    displayName: Deploy Dev
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployDev
+        displayName: Deploy to Dev Web App
+        environment: dev
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: none
+                - task: AzureWebAppContainer@1
+                  displayName: Deploy container image to Dev
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    appName: $(webAppNameDev)
+                    containers: '$(acrName).azurecr.io/$(imageRepository):$(imageTag)'
+                    appSettings: |
+                      -WEBSITES_PORT 8000
+                      -PORT 8000
+
+  - stage: Deploy_Prod
+    displayName: Deploy Prod
+    dependsOn: Deploy_Dev
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployProd
+        displayName: Deploy to Prod Web App
+        environment: prod
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: none
+                - task: AzureWebAppContainer@1
+                  displayName: Deploy container image to Prod
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    appName: $(webAppNameProd)
+                    containers: '$(acrName).azurecr.io/$(imageRepository):$(imageTag)'
+                    appSettings: |
+                      -WEBSITES_PORT 8000
+                      -PORT 8000
