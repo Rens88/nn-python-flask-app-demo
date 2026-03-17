@@ -1,32 +1,30 @@
-import os
+from pathlib import Path
 
-from flask import (Flask, redirect, render_template, request,
-                   send_from_directory, url_for)
-
-app = Flask(__name__)
+import streamlit as st
 
 
-@app.route('/')
-def index():
-   print('Request for index page received')
-   return render_template('index.html')
-
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-@app.route('/hello', methods=['POST'])
-def hello():
-   name = request.form.get('name')
-
-   if name:
-       print('Request for hello page received with name=%s' % name)
-       return render_template('hello.html', name = name)
-   else:
-       print('Request for hello page received with no name or blank name -- redirecting')
-       return redirect(url_for('index'))
+APP_TITLE = "NOCNSF SSC Demo App"
+STATIC_DIR = Path(__file__).parent / "static"
+LOGO_PATH = STATIC_DIR / "images" / "teamnl_sport_science_centre_LOGO.png"
 
 
-if __name__ == '__main__':
-   app.run()
+st.set_page_config(page_title=APP_TITLE, layout="centered")
+
+st.title(APP_TITLE)
+st.write("This sample now runs as a Streamlit app on Azure App Service.")
+
+if LOGO_PATH.exists():
+    st.image(str(LOGO_PATH), width=260)
+
+with st.form("hello_form"):
+    name = st.text_input("Could you please tell me your name?")
+    submitted = st.form_submit_button("Say Hello")
+
+if submitted:
+    cleaned_name = name.strip()
+    if cleaned_name:
+        st.success(f"Hello {cleaned_name}! It is nice to meet you.")
+    else:
+        st.warning("Please enter a name before submitting.")
+else:
+    st.caption("Enter your name and submit the form to see the greeting.")
